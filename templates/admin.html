@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server - Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --surface-color: #1e1e1e;
+            --primary: #f87171;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+            --success: #34d399;
+            --pending: #fbbf24;
+            --assigned: #60a5fa;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            background: linear-gradient(90deg, #f87171, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background-color: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+
+        .metric-card:hover { transform: translateY(-5px); }
+        .metric-title { color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+        .metric-value { font-size: 2.5rem; font-weight: 700; color: var(--text-primary); }
+
+        .table-container {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .badge-pending { background-color: rgba(251, 191, 36, 0.2); color: var(--pending); }
+        .badge-assigned { background-color: rgba(96, 165, 250, 0.2); color: var(--assigned); }
+        .badge-completed { background-color: rgba(52, 211, 153, 0.2); color: var(--success); }
+        .badge-error { background-color: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+        .refresh-btn {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover { background-color: var(--primary); color: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-header">
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <h1>Server Admin Dashboard</h1>
+        <a href="/" style="color: #60a5fa; text-decoration: none; font-size: 0.9rem;">&larr; Back to Client Portal</a>
+    </div>
+    <div>
+        <span id="last-update" style="color: var(--text-secondary); font-size: 14px; margin-right: 15px;">Live Updates ON</span>
+        <button class="refresh-btn" onclick="fetchAdminData()">Manual Refresh</button>
+    </div>
+</div>
+
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-title">Jobs In Queue</div>
+        <div class="metric-value" id="val-queue">0</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-title">Total Jobs Lifetime</div>
+        <div class="metric-value" id="val-total">0</div>
+    </div>
+</div>
+
+<div class="table-container" style="margin-bottom: 2rem;">
+    <h2 style="margin-top: 0; margin-bottom: 20px;">Connected Worker Nodes</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Worker ID</th>
+                <th>Status / Job Assigned</th>
+            </tr>
+        </thead>
+        <tbody id="workers-table">
+            <!-- Workers populated dynamically -->
+        </tbody>
+    </table>
+</div>
+
+<div class="table-container">
+    <h2 style="margin-top: 0; margin-bottom: 20px;">Job Logs</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Job ID</th>
+                <th>Status</th>
+                <th>Result</th>
+            </tr>
+        </thead>
+        <tbody id="logs-table">
+            <!-- Table content dynamically loaded -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    async function fetchAdminData() {
+        try {
+            const res = await fetch('/api/admin/data');
+            const data = await res.json();
+            
+                    // Update metrics
+            document.getElementById('val-queue').innerText = data.queue_size;
+            document.getElementById('val-total').innerText = data.total_jobs;
+
+            // Update workers table
+            const workersBody = document.getElementById('workers-table');
+            workersBody.innerHTML = '';
+            
+            const workersData = data.workers || {}; // Fallback in case old app.py is running
+            
+            if (Object.keys(workersData).length === 0) {
+                workersBody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--text-secondary);">No worker nodes connected. Run python worker.py!</td></tr>`;
+            } else {
+                for (const [workerId, statusInfo] of Object.entries(workersData)) {
+                    let stClass = statusInfo === 'Idle' ? 'badge-assigned' : 'badge-pending';
+                    workersBody.innerHTML += `
+                        <tr>
+                            <td style="font-weight: bold; color: var(--success);">${workerId}</td>
+                            <td><span class="status-badge ${stClass}">${statusInfo}</span></td>
+                        </tr>
+                    `;
+                }
+            }
+
+            // Update jobs table
+            const tbody = document.getElementById('logs-table');
+            tbody.innerHTML = '';
+            
+            // Sort jobs, newest first
+            const sortedJobs = data.jobs.sort((a,b) => b.job_id - a.job_id);
+
+            sortedJobs.forEach(job => {
+                const tr = document.createElement('tr');
+                
+                let badgeClass = 'badge-pending';
+                if (job.status === 'ASSIGNED') badgeClass = 'badge-assigned';
+                if (job.status === 'COMPLETED') badgeClass = 'badge-completed';
+
+                let resultText = job.result !== null ? job.result : '<span style="color:var(--text-secondary)">--</span>';
+
+                tr.innerHTML = `
+                    <td style="font-weight: bold;">#${job.job_id}</td>
+                    <td><span class="status-badge ${badgeClass}">${job.status}</span></td>
+                    <td style="font-family: monospace; font-size: 1rem;">${resultText}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+        } catch (e) {
+            console.error("Failed to fetch admin data", e);
+        }
+    }
+
+    // Auto refresh every 2 seconds
+    setInterval(fetchAdminData, 2000);
+    // Initial fetch
+    fetchAdminData();
+</script>
+
+</body>
+</html>

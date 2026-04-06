@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Queue - Client Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --primary-accent: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            background: linear-gradient(135deg, #60a5fa, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .card {
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        select, input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary-accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .results {
+            margin-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+        }
+
+        .job-item {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.pending { background-color: rgba(245, 158, 11, 0.2); color: var(--warning-color); }
+        .status-badge.completed { background-color: rgba(16, 185, 129, 0.2); color: var(--success-color); }
+        .status-badge.assigned { background-color: rgba(59, 130, 246, 0.2); color: var(--primary-accent); }
+
+        .job-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .job-id {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .job-result {
+            font-weight: 700;
+            font-size: 1.125rem;
+            color: #fff;
+        }
+        
+        #dynamic-inputs {
+            display: flex;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Distributed Job Queue</h1>
+        <p>Client Portal - Submit your jobs below</p>
+        <p style="margin-top: 10px;"><a href="/admin" style="color: #60a5fa; text-decoration: none; font-size: 0.9rem;">Go to Admin Dashboard &rarr;</a></p>
+    </div>
+
+    <div class="card">
+        <div class="form-group">
+            <label for="job-type">Select Job Type</label>
+            <select id="job-type" onchange="updateInputs()">
+                <option value="addition">Addition (+)</option>
+                <option value="subtraction">Subtraction (-)</option>
+                <option value="multiplication">Multiplication (×)</option>
+                <option value="factorial">Factorial (!)</option>
+                <option value="reverse">Reverse String</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="dynamic-inputs">
+            <input type="number" id="val1" placeholder="Value A" required>
+            <input type="number" id="val2" placeholder="Value B" required>
+        </div>
+
+        <button onclick="submitJob()">Submit Job</button>
+
+        <div class="results" id="results-container">
+            <!-- Jobs will appear here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    const jobList = [];
+
+    function updateInputs() {
+        const type = document.getElementById('job-type').value;
+        const container = document.getElementById('dynamic-inputs');
+        
+        if (type === 'factorial') {
+            container.innerHTML = `<input type="number" id="val1" placeholder="Number" required>`;
+        } else if (type === 'reverse') {
+            container.innerHTML = `<input type="text" id="val1" placeholder="Enter text" required>`;
+        } else {
+            container.innerHTML = `
+                <input type="number" id="val1" placeholder="Value A" required>
+                <input type="number" id="val2" placeholder="Value B" required>
+            `;
+        }
+    }
+
+    async function submitJob() {
+        const type = document.getElementById('job-type').value;
+        const val1 = document.getElementById('val1').value;
+        const val2 = document.getElementById('val2') ? document.getElementById('val2').value : null;
+
+        let job_data = "";
+        if (!val1) return alert("Please enter a value!");
+        
+        if (['addition', 'subtraction', 'multiplication'].includes(type)) {
+            if (!val2) return alert("Please enter both values!");
+            job_data = `${type} ${val1} ${val2}`;
+        } else {
+            job_data = `${type} ${val1}`;
+        }
+
+        try {
+            const res = await fetch('/api/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ job_data })
+            });
+            const data = await res.json();
+            
+            jobList.push(data.job_id);
+            renderJob(data.job_id, data.job_data, "PENDING", null);
+            
+            // start polling
+            pollStatus(data.job_id);
+            
+        } catch (e) {
+            console.error(e);
+            alert("Error submitting job!");
+        }
+    }
+
+    function renderJob(id, command, status, result) {
+        let container = document.getElementById(`job-${id}`);
+        const resultsDiv = document.getElementById('results-container');
+        
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'job-item';
+            container.id = `job-${id}`;
+            // prepend to top
+            resultsDiv.insertBefore(container, resultsDiv.firstChild);
+        }
+
+        const isComplete = status === "COMPLETED";
+        
+        container.innerHTML = `
+            <div class="job-info">
+                <span class="job-id">Job #${id} — <code>${command}</code></span>
+                ${isComplete ? `<span class="job-result">${result}</span>` : ''}
+            </div>
+            <span class="status-badge ${status.toLowerCase()}">${status}</span>
+        `;
+    }
+
+    async function pollStatus(job_id) {
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/status/${job_id}`);
+                if (!res.ok) return;
+                
+                const data = await res.json();
+                
+                // Fetch command text from existing UI (hacky but it works)
+                let existingContainer = document.getElementById(`job-${job_id}`);
+                let commandText = existingContainer.querySelector('code').innerText;
+                
+                renderJob(job_id, commandText, data.status, data.result);
+
+                if (data.status === "COMPLETED") {
+                    clearInterval(interval);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }, 1500); // poll every 1.5s
+    }
+</script>
+
+</body>
+</html>
