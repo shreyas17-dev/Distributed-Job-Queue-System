@@ -34,4 +34,39 @@ The architecture is designed in 3 layers:
 └── templates/
     ├── client.html    # Client UI for job submission
     └── admin.html     # Admin dashboard for monitoring
+```
 
+## 🚀 Prerequisites
+
+Before running the application, make sure you have Flask installed:
+```bash
+pip install flask
+```
+
+## 🚀 How to Run the Project
+
+### Step 1: Start the Server (Backend + Web Application)
+Open your terminal and run the main entry point:
+```bash
+python app.py
+```
+*Note: This will start both the Flask Web UI on `http://localhost:8080` and the hidden TCP Socket Server in the background.*
+
+### Step 2: Spin Up Worker Nodes
+Open a **new terminal tab/window** for each worker you want to launch.
+```bash
+python worker.py
+```
+*(You can run this command in 2 or 3 separate terminal windows simultaneously to see distributed load-balancing in action).*
+
+### Step 3: Access the Dashboards
+Open your preferred web browser and go to:
+* **Client Dashboard (Submit Jobs):** [http://localhost:8080](http://localhost:8080)
+* **Admin Dashboard (Monitor System):** [http://localhost:8080/admin](http://localhost:8080/admin)
+
+---
+### 🧪 Example Usage
+1. Open up the Admin dashboard so you can watch live updates.
+2. Ensure you have at least 1 or 2 `worker.py` terminal windows running.
+3. Open the Client dashboard, type a task (e.g., `"Calculate factors of 9999"`), and hit submit.
+4. Watch the Admin dashboard instantly assign the task to an available worker, process it, and return the result.
