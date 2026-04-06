@@ -1,0 +1,38 @@
+# Distributed Job Queue Service
+
+**Mini-Project:** Distributed Job Queue Service using TCP Socket Programming
+
+## 📌 Project Overview
+This project implements a lightweight distributed computing system where a central server distributes tasks to multiple worker nodes. It is built from scratch using raw Python TCP sockets for robust backend communication and features a Flask-based web dashboard.
+
+Using the web dashboard, users can submit background jobs, track their status, and monitor real-time worker activities as they pull tasks from the queue and compute them.
+
+## ✨ Features
+* **TCP Socket Communication:** Core networking logic built entirely using raw socket programming (no 3rd-party messaging libraries).
+* **Distributed Workers:** Support for spinning up multiple concurrent worker nodes that fetch and process jobs from a shared queue continuously.
+* **Client UI:** A web-based interface to easily submit text-based tasks and check their completion status.
+* **Admin Dashboard:** A real-time monitoring dashboard to view queue sizes, total job status (Pending, Assigned, Completed), and live tracking of which task each worker is processing.
+* **Thread-safe Queueing:** Backed by Python's `queue.Queue` and threading locks to prevent race conditions when multiple workers request jobs simultaneously.
+
+## 🏗️ Architecture Design
+The architecture is designed in 3 layers:
+1. **Frontend (Web UI)**: Two separate HTML interfaces (`client.html`, `admin.html`) built with HTML/CSS/JS.
+2. **Web Wrapper (`app.py`)**: A Flask application that serves the frontend, provides REST APIs to submit jobs, and natively embeds the TCP Socket Server in a background daemon thread.
+3. **Compute Nodes (`worker.py`)**: Independent, terminal-based Python processes that connect to the TCP server to perform the heavy lifting.
+
+## 💻 Tech Stack
+* **Language:** Python 3.x
+* **Networking:** `socket`, `threading`
+* **Web Framework:** Flask (for serving UI & API endpoints)
+* **Frontend:** HTML5, CSS3, JavaScript (Fetch API)
+
+## 📂 Project Structure
+```text
+├── app.py             # Flask Web App & Main execution file
+├── server.py          # Core TCP Server logic & Queue management
+├── worker.py          # Worker script (Start multiple instances)
+└── templates/
+    ├── client.html    # Client UI for job submission
+    └── admin.html     # Admin dashboard for monitoring
+
+
